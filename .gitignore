@@ -1,0 +1,11 @@
+**.*
+**/LICENCE
+**/LICENSE
+**/README
+**/VERSION
+**/CHANGELOG
+libraries/vendor/leafo/lessphp/lessify
+libraries/vendor/leafo/lessphp/plessc
+!/plugins/vmshipment/glavpunkt/**
+!.gitignore
+

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension version="1.0" type="plugin" group="vmshipment" method="upgrade">
+    <name>Модуль доставки Главпункт</name>
+    <creationDate>October 16 2018</creationDate>
+    <author>Glavpunkt</author>
+    <authorUrl>http://glavpunkt.ru/</authorUrl>
+    <copyright>Copyright (C) 2018 Glavpunkt. All rights reserved.</copyright>
+    <license>GPL v3+</license>
+    <version>3.0.0</version><!-- to be corellated with VM version -->
+    <description>Расчёт стоимости доставки службой Главпункт</description>
+    <files>
+        <filename plugin="glavpunkt">glavpunkt.php</filename>
+        <folder>language</folder>
+        <folder>assets</folder>
+        <folder>tmpl</folder>
+    </files>
+    <languages folder="language">
+        <language tag="ru-RU">ru-RU/ru-RU.plg_vmshipment_glavpunkt.ini</language>
+    </languages>
+    <scriptfile>glavpunkt.script.php</scriptfile>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="cityFrom" type="text" default="" required="true"
+                       description="VMSHIPMENT_GLAVPUNKT_PARAM_CITYFROM_DESC"
+                       label="VMSHIPMENT_GLAVPUNKT_PARAM_CITYFROM"
+                       size="64"
+                />
+                <field name="spbDeliveryPrice" type="number" min="0" default="" required="false"
+                       description="VMSHIPMENT_GLAVPUNKT_PARAM_SPBDELIVERYPRICE_DESC"
+                       label="VMSHIPMENT_GLAVPUNKT_PARAM_SPBDELIVERYPRICE"
+                       size="64"
+                />
+                <field name="mskDeliveryPrice" type="number" min="0" default="" required="false"
+                       description="VMSHIPMENT_GLAVPUNKT_PARAM_MSKDELIVERYPRICE_DESC"
+                       label="VMSHIPMENT_GLAVPUNKT_PARAM_MSKDELIVERYPRICE"
+                       size="64"
+                />
+                <field name="paymentType" type="list" default="cash"
+                       label="VMSHIPMENT_GLAVPUNKT_PARAM_PAYMENTTYPE"
+                       description="VMSHIPMENT_GLAVPUNKT_PARAM_PAYMENTTYPE_DESC">
+                    <option value="cash">PAYMENTTYPE_CASH</option>
+                    <option value="prepaid">PAYMENTTYPE_PREPAID</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

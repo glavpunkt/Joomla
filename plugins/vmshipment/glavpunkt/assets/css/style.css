@@ -1,0 +1,11 @@
+.glavpunkt-shipment-cart-options {
+    padding-left: 15px;
+}
+
+.glavpunkt-method-tab {
+    display: none;
+}
+
+.glavpunkt-method-courier-tab {
+    display: block;
+}
