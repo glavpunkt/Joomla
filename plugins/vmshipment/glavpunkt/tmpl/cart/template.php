@@ -1,28 +1,28 @@
-<div class="glavpunkt-shipment-cart-options">
+<div class="glavpunktShipmentCartOptions">
     <input
-            type="radio" name="glavpunkt-method" id="glavpunkt-method-courier" value="courier"
+            type="radio" name="glavpunktMethod" id="glavpunktMethodCourier" value="courier"
         <?php echo($displayData['data']['method'] === 'courier' ? "checked" : ""); ?>
     >
-    <label for="glavpunkt-method-courier">Курьерская доставка</label>
-    <div class="glavpunkt-method-courier-tab glavpunkt-method-tab">
+    <label for="glavpunktMethodCourierethod-courier">Курьерская доставка</label>
+    <div class="glavpunktMethodCourierTab glavpunktMethodTab">
         <?php include $displayData['data']['basePath'] . "/tmpl/cart/courier.php"; ?>
     </div>
     <br>
     <input
-            type="radio" name="glavpunkt-method" id="glavpunkt-method-punkts" value="punkts"
+            type="radio" name="glavpunktMethod" id="glavpunktMethodPunkts" value="punkts"
         <?php echo($displayData['data']['method'] === 'punkts' ? "checked" : ""); ?>
     >
-    <label for="glavpunkt-method-punkts">Самовывоз из пункта выдачи</label>
-    <div class="glavpunkt-method-punkts-tab glavpunkt-method-tab">
+    <label for="glavpunktMethodPunkts">Самовывоз из пункта выдачи</label>
+    <div class="glavpunktMethodPunktsTab glavpunktMethodTab">
         <?php include $displayData['data']['basePath'] . "/tmpl/cart/courier.php"; ?>
     </div>
     <br>
     <input
-            type="radio" name="glavpunkt-method" id="glavpunkt-method-post" value="post"
+            type="radio" name="glavpunktMethod" id="glavpunktMethodPost" value="post"
         <?php echo($displayData['data']['method'] === 'post' ? "checked" : ""); ?>
     >
-    <label for="glavpunkt-method-post">Доставка почта РФ</label>
-    <div class="glavpunkt-method-post-tab glavpunkt-method-tab">
+    <label for="glavpunktMethodPost">Доставка почта РФ</label>
+    <div class="glavpunktMethodPostTab glavpunktMethodTab">
         <?php include $displayData['data']['basePath'] . "/tmpl/cart/courier.php"; ?>
     </div>
 </div>
@@ -30,24 +30,24 @@
 <script type="text/javascript">
     jQuery(function ($) {
 
-        $(document).on('change', 'input[name=glavpunkt-method]', function () {
+        $(document).on('change', 'input[name=glavpunktMethod]', function () {
             var datas = {
-                'method': $('input[name=glavpunkt-method]:checked').val(),
+                'method': $('input[name=glavpunktMethod]:checked').val(),
             };
             updateCart(window.location.pathname, datas, 'POST');
         });
 
-        $(document).on('change', '.update-cart', function () {
+        $(document).on('change', '.updateСart', function () {
             var datas = {
                 'selectedDate': $('#deliveryDate').val(),
                 'selectedInterval': $('#deliveryInterval').val(),
-                'method': $('input[name=glavpunkt-method]:checked').val(),
+                'method': $('input[name=glavpunktMethod]:checked').val(),
             };
             updateCart(window.location.pathname, datas, 'POST');
         });
 
-        $('.glavpunkt-courier').change(function (e, firstCall) {
-            var cityTo = jQuery(".glavpunkt-courier option:checked").html();
+        $('.glavpunktCourier').change(function (e, firstCall) {
+            var cityTo = jQuery(".glavpunktCourier option:checked").html();
             $.ajax({
                 url: "https://glavpunkt.ru/api/get_tarif",
                 type: "GET",

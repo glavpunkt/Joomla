@@ -3,8 +3,7 @@
         <?php foreach ($displayData['data']['courier']['cities'] as $city) { ?>
             <option
                     value="<?php echo $city['name']; ?>"
-                    data-price=""
-                <?php echo($displayData['data']['cityTo'] === $city['name'] ? "selected" : ""); ?>
+                 <?php echo($displayData['data']['cityTo'] === $city['name'] ? "selected" : ""); ?>
             >
                 <?php echo $city['name']; ?>
             </option>
@@ -25,7 +24,7 @@
 </p>
 <p>
     <label for="deliveryInterval">Предпочтительный интервал доставки</label>
-    <select class="update-cart" name="deliveryInterval" id="deliveryInterval">
+    <select class="updateСart" name="deliveryInterval" id="deliveryInterval">
         <?php foreach ($displayData['data']['courier']['intervals'] as $interval) { ?>
             <option
                     value="<?php echo $interval; ?>"

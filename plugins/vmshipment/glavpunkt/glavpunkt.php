@@ -100,6 +100,8 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     }
 
     /**
+     * При выборе посчитанной цены доставки
+     *
      * @param VirtueMartCart $cart
      * @param array $cart_prices
      * @param                $cart_prices_name
@@ -168,6 +170,10 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     }
 
     /**
+     * Проверка условий
+     *
+     * Если по одному из условий не подходят, доставка не выводится
+     *
      * @param VirtueMartCart $cart
      * @param int $method
      * @param array $cart_prices
@@ -197,6 +203,9 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     }
 
     /**
+     * This event is fired after the payment method has been selected. It can be used to store
+     * additional payment info in the cart.
+     *
      * @param VirtueMartCart $cart
      * @return null
      */
