@@ -1,10 +1,10 @@
-<div class="glavpunktShipmentCartOptions">
+<div class="glavpunkt_shipment_cart_options">
     <input
             type="radio" name="glavpunktMethod" id="glavpunktMethodCourier" value="courier"
         <?php echo($displayData['data']['method'] === 'courier' ? "checked" : ""); ?>
     >
-    <label for="glavpunktMethodCourierethod-courier">Курьерская доставка</label>
-    <div class="glavpunktMethodCourierTab glavpunktMethodTab">
+    <label for="glavpunktMethodCourier">Курьерская доставка</label>
+    <div class="glavpunkt_method_courier_tab glavpunkt_method_tab">
         <?php include $displayData['data']['basePath'] . "/tmpl/cart/courier.php"; ?>
     </div>
     <br>
@@ -13,7 +13,7 @@
         <?php echo($displayData['data']['method'] === 'punkts' ? "checked" : ""); ?>
     >
     <label for="glavpunktMethodPunkts">Самовывоз из пункта выдачи</label>
-    <div class="glavpunktMethodPunktsTab glavpunktMethodTab">
+    <div class="glavpunkt_method_punkts_tab glavpunkt_method_tab">
         <?php include $displayData['data']['basePath'] . "/tmpl/cart/courier.php"; ?>
     </div>
     <br>
@@ -22,7 +22,7 @@
         <?php echo($displayData['data']['method'] === 'post' ? "checked" : ""); ?>
     >
     <label for="glavpunktMethodPost">Доставка почта РФ</label>
-    <div class="glavpunktMethodPostTab glavpunktMethodTab">
+    <div class="glavpunkt_method_post_tab glavpunkt_method_tab">
         <?php include $displayData['data']['basePath'] . "/tmpl/cart/courier.php"; ?>
     </div>
 </div>
@@ -37,7 +37,7 @@
             updateCart(window.location.pathname, datas, 'POST');
         });
 
-        $(document).on('change', '.updateСart', function () {
+        $(document).on('change', '.update_cart', function () {
             var datas = {
                 'selectedDate': $('#deliveryDate').val(),
                 'selectedInterval': $('#deliveryInterval').val(),
@@ -46,8 +46,8 @@
             updateCart(window.location.pathname, datas, 'POST');
         });
 
-        $('.glavpunktCourier').change(function (e, firstCall) {
-            var cityTo = jQuery(".glavpunktCourier option:checked").html();
+        $('.glavpunkt_сourier').change(function (e, firstCall) {
+            var cityTo = jQuery(".glavpunkt_сourier option:checked").html();
             $.ajax({
                 url: "https://glavpunkt.ru/api/get_tarif",
                 type: "GET",

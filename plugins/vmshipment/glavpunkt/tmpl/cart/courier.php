@@ -1,5 +1,5 @@
 <p>Доставка в город:
-    <select style="padding: 4px 5px;" class="glavpunkt-courier" id="courierDeliveryGlavpunkt">
+    <select style="padding: 4px 5px;" class="glavpunkt_courier" id="courierDeliveryGlavpunkt">
         <?php foreach ($displayData['data']['courier']['cities'] as $city) { ?>
             <option
                     value="<?php echo $city['name']; ?>"
@@ -13,7 +13,7 @@
 <p>
     <label for="deliveryDate">Предпочтительная дата доставки</label>
     <input
-            class="update-cart"
+            class="update_cart"
             type="date"
             name="deliveryDate"
             id="deliveryDate"
@@ -24,7 +24,7 @@
 </p>
 <p>
     <label for="deliveryInterval">Предпочтительный интервал доставки</label>
-    <select class="updateСart" name="deliveryInterval" id="deliveryInterval">
+    <select class="update_cart" name="deliveryInterval" id="deliveryInterval">
         <?php foreach ($displayData['data']['courier']['intervals'] as $interval) { ?>
             <option
                     value="<?php echo $interval; ?>"
