@@ -15,23 +15,11 @@ if (!class_exists('CurrencyDisplay')) {
 
 class PlgvmshipmentGlavpunkt extends vmPSPlugin
 {
-    /** @var string город доставки */
-    private $cityTo;
+    /** @var array вся информация о доставке */
+    private $data;
 
-    /** @var string город отправки */
-    private $cityFrom;
-
-    /** @var string способ оплаты */
-    private $paymentType;
-
-    /** @var string выбранная дата доставки */
-    private $selectedDate;
-
-    /** @var string выбранный интервал доставки */
-    private $selectedInterval;
-
-    /** @var string выбранный способ доставки (courier, punkts, post) */
-    private $method;
+    /** @var array массив ошибок */
+    private $error = [];
 
     /**
      * PlgvmshipmentGlavpunkt constructor.
@@ -53,35 +41,78 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
         $this->setConfigParameterable($this->_configTableFieldName, $varsToPush);
 
         // Получаем параметры, которые указал клиент в настройках
-        $this->cityFrom = isset($this->params['cityFrom']) ? $this->params['cityFrom'] : 'Санкт-Петербург';
-        $this->paymentType = isset($this->params['paymentType']) ? $this->params['paymentType'] : 'cash';
+        $this->data['cityFrom'] = isset($this->params['cityFrom']) ? $this->params['cityFrom'] : 'Санкт-Петербург';
+        $this->data['paymentType'] = isset($this->params['paymentType']) ? $this->params['paymentType'] : 'cash';
+
+        // Получаем корзину
+        $cart = VirtueMartCart::getCart();
+        /**
+         * Получаем массив адреса
+         *
+         * Array
+         * [
+         *  [email] => mr.chepikov@gmail.com
+         *  [company] =>
+         *  [title] => Mr
+         *  [first_name] => Serge
+         *  [middle_name] => Andrew
+         *  [last_name] => Men
+         *  [address_1] => Литовская 15
+         *  [address_2] =>
+         *  [zip] => 197000
+         *  [city] => Санкт-Петербург
+         *  [virtuemart_country_id] => 176
+         *  [virtuemart_state_id] => 627
+         *  [phone_1] =>
+         *  [phone_2] =>
+         *  [fax] =>
+         * ]
+         */
+        $address = $cart->getST();
+
+        // Получаем город и индекс из заполненного пользователем ранее
+        $cityTo = $address['city'] !== ''
+            ? $address['city']
+            : 'Санкт-Петербург';
+
+        $zip = $address['zip'] !== ''
+            ? $address['zip']
+            : '197000';
 
         // Получаем переменные, из POST запроса или же из сессии
-        $this->cityTo = vRequest::get(
-            'cityTo',
-            JFactory::getSession()->get('cityTo', 'Санкт-Петербург', __CLASS__)
+
+        $this->getFromPOSTorSession('cityTo', $cityTo);
+        $this->getFromPOSTorSession('selectedDate');
+        $this->getFromPOSTorSession('selectedInterval', '10:00 - 18:00');
+        $this->getFromPOSTorSession('method', 'courier');
+        $this->getFromPOSTorSession('zip', $zip);
+        $this->getFromPOSTorSession(
+            'address',
+            $zip . ' ' . $cityTo . ' ' . $address['address_1'] . ' ' . $address['address_2']
         );
-        JFactory::getSession()->set('cityTo', $this->cityTo, __CLASS__);
+        $this->getFromPOSTorSession('pvzCity', 'SPB');
+        $this->getFromPOSTorSession('pvzId', 'Avtovo-S75');
 
-        $this->selectedDate = vRequest::get(
-            'selectedDate',
-            JFactory::getSession()->set('selectedDate', '', __CLASS__)
+    }
+
+    /**
+     * Мы получаем значение из POST и заполняем переменную объекта
+     *
+     * @param string $var название переменное, по которому мы будем его хранить и использовать
+     * @param string $default значение переменной по умолчанию
+     */
+    private function getFromPOSTorSession($var, $default = '')
+    {
+        if (JFactory::getSession()->get($var, $default, __CLASS__) !== '') {
+            $cachedData = JFactory::getSession()->get($var, $default, __CLASS__);
+        } else {
+            $cachedData = $default;
+        }
+        $this->data[$var] = vRequest::get(
+            $var,
+            $cachedData
         );
-        JFactory::getSession()->set('selectedDate', $this->selectedDate, __CLASS__);
-
-        $this->selectedInterval = vRequest::get(
-            'selectedInterval',
-            JFactory::getSession()->set('selectedInterval', '10:00 - 18:00', __CLASS__)
-        );
-        JFactory::getSession()->set('selectedInterval', $this->selectedInterval, __CLASS__);
-
-        $this->method = vRequest::get(
-            'method',
-            JFactory::getSession()->get('method', 'courier', __CLASS__)
-        );
-        JFactory::getSession()->set('method', $this->method, __CLASS__);
-
-
+        JFactory::getSession()->set($var, $this->data[$var], __CLASS__);
     }
 
     /**
@@ -97,6 +128,35 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     public function plgVmOnCheckAutomaticSelectedShipment(VirtueMartCart $cart, array $cart_prices, &$shipCounter)
     {
         return $this->onCheckAutomaticSelected($cart, $cart_prices, $shipCounter);
+    }
+
+    /**
+     * Вывод описания пункта выдачи
+     *
+     * @param string $pvzId идентификатор пункта выдачи
+     * @param string $cityId идентификатор города пункта выдачи
+     * @return string
+     */
+    private function getPVZDescription($pvzId, $cityId)
+    {
+        $desc = '';
+        if (in_array($cityId, ['SPB', 'MSK'])) {
+            $pvzList = json_decode($this->curlRequest('https://glavpunkt.ru/api/punkts'), true);
+        } else {
+            $pvzList = json_decode($this->curlRequest('https://glavpunkt.ru/punkts-rf.json'), true);
+        }
+
+        foreach ($pvzList as $punkt) {
+            if ($punkt['id'] === $pvzId) {
+                $desc .= ' Пункт выдачи ' . (isset($punkt['brand']) ? $punkt['brand'] : "Главпункт") . '<br>';
+                $desc .= ' Город: ' . $punkt['city'] . '<br>';
+                $desc .= ' Адрес: ' . (isset($punkt['metro']) ? $punkt['metro'] . ", " : "") . $punkt['address'] . '<br>';
+                $desc .= ' Телефон: ' . $punkt['phone'] . '<br>';
+                $desc .= ' Время работы: ' . $punkt['work_time'] . '<br>';
+            }
+        }
+
+        return $desc;
     }
 
     /**
@@ -121,14 +181,20 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
      * @param VirtueMartCart $cart
      * @param                $method
      * @param                $cart_prices
-     * @throws Exception
      * @return int
      */
     public function getCosts(VirtueMartCart $cart, $method, $cart_prices)
     {
-        switch ($this->method) {
+        switch ($this->data['method']) {
             case "courier":
                 return $this->getCourierCost();
+                break;
+            case "post":
+                return $this->getPostCost();
+                break;
+            case "punkts":
+                return $this->getPunktsCost();
+                break;
             default:
                 return 0;
         }
@@ -137,19 +203,45 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Вывод цены курьерской доставки
      *
-     * @return bool|int
-     * @throws Exception
+     * @return int
      */
     private function getCourierCost()
     {
-        if ($this->cityTo === 'Санкт-Петербург' && trim($this->params['spbDeliveryPrice']) !== '') {
+        if ($this->data['cityTo'] === 'Санкт-Петербург' && trim($this->params['spbDeliveryPrice']) !== '') {
             return $this->params['spbDeliveryPrice'];
         }
-        if ($this->cityTo === 'Москва' && trim($this->params['mskDeliveryPrice']) !== '') {
+        if ($this->data['cityTo'] === 'Москва' && trim($this->params['mskDeliveryPrice']) !== '') {
             return $this->params['mskDeliveryPrice'];
         }
 
         return $this->calculateCourierDelivery();
+    }
+
+    /**
+     * Вывод цены доставки до пунктов выдачи
+     *
+     * @return int
+     */
+    private function getPunktsCost()
+    {
+        if ($this->data['pvzCity'] === 'SPB' && trim($this->params['spbPunktsPrice']) !== '') {
+            return $this->params['spbPunktsPrice'];
+        }
+        if ($this->data['pvzCity'] === 'MSK' && trim($this->params['mskPunktsPrice']) !== '') {
+            return $this->params['mskPunktsPrice'];
+        }
+
+        return $this->calculatePunktsDelivery();
+    }
+
+    /**
+     * Вывод цены доставки Почты РФ
+     *
+     * @return int
+     */
+    private function getPostCost()
+    {
+        return $this->calculatePostDelivery();
     }
 
     /**
@@ -234,6 +326,8 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
                 'vmshipment',
                 'glavpunkt'
             )->params);
+
+            $doc->addScript('https://glavpunkt.ru/js/punkts-widget/glavpunkt.js');
             $doc->addScript(JUri::root(true) . '/plugins/vmshipment/glavpunkt/assets/js/script.js');
             $doc->addStyleSheet(JUri::root(true) . '/plugins/vmshipment/glavpunkt/assets/css/style.css');
         }
@@ -247,18 +341,18 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
 
         $data = [
             'id' => '',
-            'method' => $this->method,
-            'cityFrom' => $this->cityFrom,
-            'cityTo' => $this->cityTo,
+            'method' => $this->data['method'],
+            'cityFrom' => $this->data['cityFrom'],
+            'cityTo' => $this->data['cityTo'],
             'price' => $cart->cartPrices['salesPrice'],
             'weight' => (int)$this->getOrderWeight($cart, 'KG'),
-            'paymentType' => $this->paymentType,
+            'paymentType' => $this->data['paymentType'],
             'basePath' => __DIR__,
             'courier' => [
                 'minDate' => date('Y-m-d', time() + 86400),
                 'maxDate' => date('Y-m-d', time() + 86400 * 30),
-                'selectedDate' => $this->selectedDate,
-                'selectedInterval' => $this->selectedInterval,
+                'selectedDate' => $this->data['selectedDate'],
+                'selectedInterval' => $this->data['selectedInterval'],
                 'intervals' => [
                     '10:00 - 18:00',
                     '10:00 - 14:00',
@@ -270,10 +364,19 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
                 ],
                 'cities' => $answerGetCities
             ],
+            'post' => [
+                'zip' => $this->data['zip'],
+                'address' => $this->data['address'],
+            ],
+            'punkts' => [
+                'selectedPVZ' => $this->getPVZDescription($this->data['pvzId'], $this->data['pvzCity']),
+            ]
         ];
+        $error = array_unique($this->error);
+
         $html .= JLayoutHelper::render(
             'cart.template',
-            compact('data'),
+            compact('data' , 'error'),
             __DIR__ . '/tmpl/'
         );
 
@@ -321,30 +424,111 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Расчёт курьерской доставки
      *
-     * @return int|bool
-     * @throws Exception
+     * @return int
      */
     private function calculateCourierDelivery()
     {
         $cart = VirtueMartCart::getCart();
 
         if (!isset($cart->cartPrices['salesPrice'])) {
-            throw new Exception('Не передана сумма заказа');
+            $this->error[] = 'Не передана сумма заказа';
+            return 0;
         }
 
         $url = 'https://glavpunkt.ru/api/get_tarif' .
             '?serv=' . 'курьерская доставка' .
-            '&cityFrom=' . $this->cityFrom .
-            '&cityTo=' . $this->cityTo .
+            '&cms=joomla' .
+            '&cityFrom=' . $this->data['cityFrom'] .
+            '&cityTo=' . $this->data['cityTo'] .
             '&weight=' . (int)$this->getOrderWeight($cart, 'KG') .
-            '&paymentType=' . $this->paymentType .
+            '&paymentType=' . $this->data['paymentType'] .
             '&price=' . $cart->cartPrices['salesPrice'];
         $result = json_decode($this->curlRequest($url), true);
         if ($result['result'] !== 'ok') {
-            throw new Exception($result['message']);
+            $this->error[] = $result['message'];
+            return 0;
         }
 
-        return $result['tarif'];
+        return (int)$result['tarif'];
+    }
+
+    /**
+     * Расчёт доставки Почты РФ
+     *
+     * @return int
+     */
+    private function calculatePostDelivery()
+    {
+        $cart = VirtueMartCart::getCart();
+
+        if (!isset($cart->cartPrices['salesPrice'])) {
+            $this->error[] = 'Не передана сумма заказа';
+            return 0;
+        }
+
+        switch ($this->data['cityFrom']) {
+            case 'Москва':
+                $cityFrom = 'MSK';
+                break;
+            case 'Санкт-Петербург':
+                $cityFrom = 'SPB';
+                break;
+            default:
+                $this->error[] = 'Для города ' . $this->data['cityFrom'] . ' не предусмотрена отправка Почтой';
+                return 0;
+                break;
+        }
+
+        $data = [
+            'cms' => 'joomla',
+            'cityFrom' => $cityFrom,
+            'index' => $this->data['zip'],
+            'address' => $this->data['address'],
+            'weight' => (int)$this->getOrderWeight($cart, 'KG'),
+            'price' => $cart->cartPrices['salesPrice'],
+            'paymentType' => $this->data['paymentType'],
+        ];
+
+        $url = 'https://glavpunkt.ru/api/get_pochta_tarif?' . http_build_query($data);
+        $result = json_decode($this->curlRequest($url), true);
+        if ($result['result'] !== 'ok') {
+            $this->error[] = $result['message'];
+            return 0;
+        }
+
+        return (int)$result['tarifTotal'];
+    }
+
+    /**
+     * Расчёт цены доставки до пунктов выдачи
+     *
+     * @return int
+     */
+    private function calculatePunktsDelivery()
+    {
+        $cart = VirtueMartCart::getCart();
+
+        if (!isset($cart->cartPrices['salesPrice'])) {
+            $this->error[] = 'Не передана сумма заказа';
+            return 0;
+        }
+
+        $url = 'https://glavpunkt.ru/api/get_tarif' .
+            '?serv=' . 'выдача' .
+            '&cms=joomla' .
+            '&cityFrom=' . $this->data['cityFrom'] .
+            '&cityTo=' . $this->data['pvzCity'] .
+            '&weight=' . (int)$this->getOrderWeight($cart, 'KG') .
+            '&paymentType=' . $this->data['paymentType'] .
+            '&price=' . $cart->cartPrices['salesPrice'] .
+            '&punktId=' . $this->data['pvzId'];
+        $result = json_decode($this->curlRequest($url), true);
+        if ($result['result'] !== 'ok') {
+            $this->error[] = $result['message'];
+            return 0;
+        }
+
+        return (int)$result['tarif'];
     }
 
     /**
@@ -397,6 +581,9 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
             'glavpunkt_cityto' => 'varchar(200)',
             'glavpunkt_pvz_id' => 'varchar(200)',
             'glavpunkt_city_id' => 'varchar(200)',
+            'glavpunkt_zip' => 'int(6)',
+            'glavpunkt_address' => 'varchar(500)',
+            'glavpunkt_pvz_description' => 'varchar(500)',
         ];
     }
 
@@ -426,8 +613,44 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
      */
     public function getOrderShipmentHtml($virtuemart_order_id)
     {
-        // @todo В полной мере описать различные варианты доставки
-        return "Доставка Главпункт";
+        $db = JFactory::getDBO();
+        $q = 'SELECT * FROM `' . $this->_tablename . '` '
+            . 'WHERE `virtuemart_order_id` = ' . $virtuemart_order_id;
+        $db->setQuery($q);
+        if (!($shipinfo = (array)$db->loadObject())) {
+            return '';
+        }
+
+        $html = '<table class="adminlist table">' . "\n";
+        $html .= $this->getHtmlHeaderBE();
+
+        switch ($shipinfo['glavpunkt_method']) {
+            case "courier":
+                $html .= $this->getHtmlRowBE(
+                    'Доставка службой',
+                    'курьерская доставка в город' . $shipinfo['glavpunkt_cityto']
+                );
+                $html .= $this->getHtmlRowBE('Желаемая дата доставки', $shipinfo['glavpunkt_delivery_date']);
+                $html .= $this->getHtmlRowBE('Желаемый интервал доставки', $shipinfo['glavpunkt_delivery_interval']);
+                break;
+            case "post":
+                $html .= $this->getHtmlRowBE('Доставка службой', 'Доставка Главпункт Почтой РФ');
+                $html .= $this->getHtmlRowBE('Индекс получателя', $shipinfo['glavpunkt_zip']);
+                $html .= $this->getHtmlRowBE('Адрес получателя', $shipinfo['glavpunkt_address']);
+                break;
+            case "punkts":
+                $html .= $this->getHtmlRowBE('Доставка службой', 'до пункта выдачи');
+                $html .= $this->getHtmlRowBE(
+                    'Пункт выдачи:',
+                    $this->getPVZDescription($shipinfo['glavpunkt_pvz_id'], $shipinfo['glavpunkt_city_id'])
+                );
+                break;
+            default:
+                break;
+        }
+        $html .= '</table>' . "\n";
+
+        return $html;
     }
 
     /**
@@ -451,12 +674,14 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
         $values['order_weight'] = $this->getOrderWeight($cart, $method->weight_unit);
         $values['shipment_name'] = $this->renderPluginName($method);
         $values['shipment_weight_unit'] = "KG";
-        $values['glavpunkt_delivery_date'] = $this->selectedDate;
-        $values['glavpunkt_delivery_interval'] = $this->selectedInterval;
-        $values['glavpunkt_cityto'] = $this->cityTo;
-        $values['glavpunkt_method'] = $this->method;
-        $values['glavpunkt_pvz_id'] = '';
-        $values['glavpunkt_city_id'] = '';
+        $values['glavpunkt_delivery_date'] = $this->data['selectedDate'];
+        $values['glavpunkt_delivery_interval'] = $this->data['selectedInterval'];
+        $values['glavpunkt_cityto'] = $this->data['cityTo'];
+        $values['glavpunkt_method'] = $this->data['method'];
+        $values['glavpunkt_pvz_id'] = $this->data['pvzId'];
+        $values['glavpunkt_city_id'] = $this->data['pvzCity'];
+        $values['glavpunkt_zip'] = $this->data['zip'];
+        $values['glavpunkt_address'] = $this->data['address'];
 
         $this->storePSPluginInternalData($values);
 
