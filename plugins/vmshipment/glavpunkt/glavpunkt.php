@@ -449,7 +449,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
             return 0;
         }
 
-        return $result['tarif'];
+        return (int)$result['tarif'];
     }
 
     /**
@@ -496,7 +496,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
             return 0;
         }
 
-        return $result['tarifTotal'];
+        return (int)$result['tarifTotal'];
     }
 
     /**
@@ -528,7 +528,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
             return 0;
         }
 
-        return $result['tarif'];
+        return (int)$result['tarif'];
     }
 
     /**
