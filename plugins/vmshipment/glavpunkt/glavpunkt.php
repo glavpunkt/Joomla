@@ -98,8 +98,8 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Мы получаем значение из POST и заполняем переменную объекта
      *
-     * @param $var
-     * @param string $default
+     * @param string $var название переменное, по которому мы будем его хранить и использовать
+     * @param string $default значение переменной по умолчанию
      */
     private function getFromPOSTorSession($var, $default = '')
     {
@@ -133,8 +133,8 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Вывод описания пункта выдачи
      *
-     * @param $pvzId
-     * @param $cityId
+     * @param string $pvzId идентификатор пункта выдачи
+     * @param string $cityId идентификатор города пункта выдачи
      * @return string
      */
     private function getPVZDescription($pvzId, $cityId)
@@ -145,8 +145,6 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
         } else {
             $pvzList = json_decode($this->curlRequest('https://glavpunkt.ru/punkts-rf.json'), true);
         }
-
-       echo $pvzId;
 
         foreach ($pvzList as $punkt) {
             if ($punkt['id'] === $pvzId) {
@@ -205,7 +203,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Вывод цены курьерской доставки
      *
-     * @return bool|int
+     * @return int
      */
     private function getCourierCost()
     {
@@ -222,7 +220,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Вывод цены доставки до пунктов выдачи
      *
-     * @return mixed
+     * @return int
      */
     private function getPunktsCost()
     {
@@ -239,7 +237,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Вывод цены доставки Почты РФ
      *
-     * @return mixed
+     * @return int
      */
     private function getPostCost()
     {
@@ -426,7 +424,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Расчёт курьерской доставки
      *
-     * @return int|bool
+     * @return int
      */
     private function calculateCourierDelivery()
     {
@@ -434,7 +432,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
 
         if (!isset($cart->cartPrices['salesPrice'])) {
             $this->error[] = 'Не передана сумма заказа';
-            return '';
+            return 0;
         }
 
         $url = 'https://glavpunkt.ru/api/get_tarif' .
@@ -448,7 +446,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
         $result = json_decode($this->curlRequest($url), true);
         if ($result['result'] !== 'ok') {
             $this->error[] = $result['message'];
-            return '';
+            return 0;
         }
 
         return $result['tarif'];
@@ -457,7 +455,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Расчёт доставки Почты РФ
      *
-     * @return string
+     * @return int
      */
     private function calculatePostDelivery()
     {
@@ -465,7 +463,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
 
         if (!isset($cart->cartPrices['salesPrice'])) {
             $this->error[] = 'Не передана сумма заказа';
-            return '';
+            return 0;
         }
 
         switch ($this->data['cityFrom']) {
@@ -477,7 +475,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
                 break;
             default:
                 $this->error[] = 'Для города ' . $this->data['cityFrom'] . ' не предусмотрена отправка Почтой';
-                return '';
+                return 0;
                 break;
         }
 
@@ -495,7 +493,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
         $result = json_decode($this->curlRequest($url), true);
         if ($result['result'] !== 'ok') {
             $this->error[] = $result['message'];
-            return '';
+            return 0;
         }
 
         return $result['tarifTotal'];
@@ -504,7 +502,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
     /**
      * Расчёт цены доставки до пунктов выдачи
      *
-     * @return mixed
+     * @return int
      */
     private function calculatePunktsDelivery()
     {
@@ -512,7 +510,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
 
         if (!isset($cart->cartPrices['salesPrice'])) {
             $this->error[] = 'Не передана сумма заказа';
-            return '';
+            return 0;
         }
 
         $url = 'https://glavpunkt.ru/api/get_tarif' .
@@ -527,7 +525,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
         $result = json_decode($this->curlRequest($url), true);
         if ($result['result'] !== 'ok') {
             $this->error[] = $result['message'];
-            return '';
+            return 0;
         }
 
         return $result['tarif'];
@@ -636,7 +634,7 @@ class PlgvmshipmentGlavpunkt extends vmPSPlugin
                 $html .= $this->getHtmlRowBE('Желаемый интервал доставки', $shipinfo['glavpunkt_delivery_interval']);
                 break;
             case "post":
-                $html .= $this->getHtmlRowBE('Доставка службой', 'Доставка Почтой РФ');
+                $html .= $this->getHtmlRowBE('Доставка службой', 'Доставка Главпункт Почтой РФ');
                 $html .= $this->getHtmlRowBE('Индекс получателя', $shipinfo['glavpunkt_zip']);
                 $html .= $this->getHtmlRowBE('Адрес получателя', $shipinfo['glavpunkt_address']);
                 break;
