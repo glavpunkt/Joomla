@@ -6,6 +6,19 @@
     display: none;
 }
 
-.glavpunkt_method_courier_tab {
-    display: block;
+.checked_punkt {
+    background: #fff;
+    border: 1px solid #aaa;
+    padding: 10px;
+    margin: 5px;
+}
+
+.glavpunkt_error {
+    border: 1px solid #a70000;
+    background: #a70000;
+    color: #fff;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 10px;
+    text-align: center;
 }

@@ -36,6 +36,16 @@
                        label="VMSHIPMENT_GLAVPUNKT_PARAM_MSKDELIVERYPRICE"
                        size="64"
                 />
+                <field name="spbPunktsPrice" type="number" min="0" default="" required="false"
+                       description="VMSHIPMENT_GLAVPUNKT_PARAM_SPBPUNKTSPRICE_DESC"
+                       label="VMSHIPMENT_GLAVPUNKT_PARAM_SPBPUNKTSPRICE"
+                       size="64"
+                />
+                <field name="mskPunktsPrice" type="number" min="0" default="" required="false"
+                       description="VMSHIPMENT_GLAVPUNKT_PARAM_MSKPUNKTSPRICE_DESC"
+                       label="VMSHIPMENT_GLAVPUNKT_PARAM_MSKPUNKTSPRICE"
+                       size="64"
+                />
                 <field name="paymentType" type="list" default="cash"
                        label="VMSHIPMENT_GLAVPUNKT_PARAM_PAYMENTTYPE"
                        description="VMSHIPMENT_GLAVPUNKT_PARAM_PAYMENTTYPE_DESC">
